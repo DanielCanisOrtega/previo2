@@ -2,8 +2,8 @@ from django.shortcuts import render
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
-from .models import Orden, Proyecto, Sala, Reserva
-from .serializers import OrdenSerializer, ProyectoSerializer, ReservaSerializer, SalaSerializer
+from .models import Orden, Proyecto, Sala, Reserva, Vehiculo, Inventario
+from .serializers import OrdenSerializer, ProyectoSerializer, ReservaSerializer, SalaSerializer, VehiculoSerializer, InventarioSerializer
 
 # Create your views here.
 
@@ -83,5 +83,28 @@ class ReservaViewSet(viewsets.ModelViewSet):
 
         serializer = SalaSerializer(salas_disponibles, many=True)
         return Response(serializer.data)
+    
+class VehiculoViewSet(viewsets.ModelViewSet):
+    queryset = Vehiculo.objects.all()
+    serializer_class = VehiculoSerializer
+
+    @action(detail=True, methods=['post'], url_path='verificar-disponibilidad')
+    def verificar_disponibilidad(self, request, pk=None):
+        vehiculo = self.get_object()
+        cantidad = int(request.data.get('cantidad', 1))  # Vehículos solicitados
+
+        try:
+            inventario = vehiculo.inventario
+            if inventario.cantidad_disponible >= cantidad:
+                return Response({'mensaje': 'Vehículo disponible'}, status=status.HTTP_200_OK)
+            else:
+                return Response({'mensaje': 'No hay suficientes vehículos disponibles'}, status=status.HTTP_400_BAD_REQUEST)
+        except Inventario.DoesNotExist:
+            return Response({'mensaje': 'El inventario de este vehículo no está configurado'}, status=status.HTTP_404_NOT_FOUND)
+
+
+class InventarioViewSet(viewsets.ModelViewSet):
+    queryset = Inventario.objects.all()
+    serializer_class = InventarioSerializer
 
 
