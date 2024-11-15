@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Orden, DetalleOrden, Proyecto, TareaProyecto
+from .models import Orden, DetalleOrden, Proyecto, TareaProyecto, Sala, Reserva
 
 class DetalleOrdenSerializer(serializers.ModelSerializer):
     subtotal = serializers.SerializerMethodField()
@@ -39,3 +39,14 @@ class ProyectoSerializer(serializers.ModelSerializer):
             return 0
         tareas_completadas = obj.tareas.filter(completado=True).count()
         return round((tareas_completadas / total_tareas) * 100, 2)
+
+class SalaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Sala
+        fields = ['id', 'nombre', 'capacidad', 'disponibilidad']
+
+
+class ReservaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Reserva
+        fields = ['id', 'sala', 'fecha', 'hora_inicio', 'hora_fin']
