@@ -2,8 +2,8 @@ from django.shortcuts import render
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
-from .models import Orden, Proyecto
-from .serializers import OrdenSerializer, ProyectoSerializer
+from .models import Orden, Proyecto, Sala, Reserva
+from .serializers import OrdenSerializer, ProyectoSerializer, ReservaSerializer, SalaSerializer
 
 # Create your views here.
 
@@ -11,7 +11,7 @@ from .serializers import OrdenSerializer, ProyectoSerializer
 class OrdenViewSet(viewsets.ModelViewSet):
     queryset = Orden.objects.all()
     serializer_class = OrdenSerializer
-    
+
     @action(detail=True, methods=['patch'], url_path='cambiar-estado')
     def cambiar_estado(self, request, pk=None):
         orden = self.get_object()
@@ -36,5 +36,52 @@ class ProyectoViewSet(viewsets.ModelViewSet):
             tareas_completadas = proyecto.tareas.filter(completado=True).count()
             progreso = round((tareas_completadas / total_tareas) * 100, 2)
         return Response({'progreso': f'{progreso}% de tareas completadas'})
+
+class ReservaViewSet(viewsets.ModelViewSet):
+    queryset = Reserva.objects.all()
+    serializer_class = ReservaSerializer
+
+    def create(self, request, *args, **kwargs):
+        data = request.data
+        sala_id = data.get('sala')
+        fecha = data.get('fecha')
+        hora_inicio = data.get('hora_inicio')
+        hora_fin = data.get('hora_fin')
+
+        # Verificar si la sala está disponible
+        conflictos = Reserva.objects.filter(
+            sala_id=sala_id,
+            fecha=fecha,
+            hora_inicio__lt=hora_fin,
+            hora_fin__gt=hora_inicio
+        )
+        if conflictos.exists():
+            return Response(
+                {'error': 'La sala no está disponible en el horario solicitado.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        return super().create(request, *args, **kwargs)
+
+    @action(detail=False, methods=['get'], url_path='disponibilidad')
+    def disponibilidad_salas(self, request):
+        fecha = request.query_params.get('fecha')
+        hora_inicio = request.query_params.get('hora_inicio')
+        hora_fin = request.query_params.get('hora_fin')
+
+        if not fecha or not hora_inicio or not hora_fin:
+            return Response(
+                {'error': 'Debe proporcionar fecha, hora_inicio y hora_fin como parámetros de consulta.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        salas_disponibles = Sala.objects.exclude(
+            reservas__fecha=fecha,
+            reservas__hora_inicio__lt=hora_fin,
+            reservas__hora_fin__gt=hora_inicio
+        )
+
+        serializer = SalaSerializer(salas_disponibles, many=True)
+        return Response(serializer.data)
 
 
