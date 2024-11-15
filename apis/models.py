@@ -76,3 +76,21 @@ class Reserva(models.Model):
 
     def __str__(self):
         return f"Reserva de {self.sala.nombre} el {self.fecha} de {self.hora_inicio} a {self.hora_fin}"
+    
+class Vehiculo(models.Model):
+    marca = models.CharField(max_length=100)
+    modelo = models.CharField(max_length=100)
+    año = models.PositiveIntegerField()
+    precio = models.DecimalField(max_digits=10, decimal_places=2)
+    disponibilidad = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f"{self.marca} {self.modelo} ({self.año})"
+
+
+class Inventario(models.Model):
+    vehiculo = models.OneToOneField(Vehiculo, related_name='inventario', on_delete=models.CASCADE)
+    cantidad_disponible = models.PositiveIntegerField()
+
+    def __str__(self):
+        return f"Inventario de {self.vehiculo.marca} {self.vehiculo.modelo}"
