@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Orden, DetalleOrden, Proyecto, TareaProyecto, Sala, Reserva
+from .models import Orden, DetalleOrden, Proyecto, TareaProyecto, Sala, Reserva, Vehiculo, Inventario
 
 class DetalleOrdenSerializer(serializers.ModelSerializer):
     subtotal = serializers.SerializerMethodField()
@@ -50,3 +50,16 @@ class ReservaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Reserva
         fields = ['id', 'sala', 'fecha', 'hora_inicio', 'hora_fin']
+
+class VehiculoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Vehiculo
+        fields = ['id', 'marca', 'modelo', 'año', 'precio', 'disponibilidad']
+
+
+class InventarioSerializer(serializers.ModelSerializer):
+    vehiculo = VehiculoSerializer(read_only=True)
+
+    class Meta:
+        model = Inventario
+        fields = ['id', 'vehiculo', 'cantidad_disponible']
