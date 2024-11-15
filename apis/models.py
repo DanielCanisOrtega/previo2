@@ -55,3 +55,24 @@ class TareaProyecto(models.Model):
 
     def __str__(self):
         return f"Tarea: {self.nombre_tarea} - Proyecto: {self.proyecto.nombre}"
+    
+class Sala(models.Model):
+    nombre = models.CharField(max_length=100, unique=True)
+    capacidad = models.PositiveIntegerField()
+    disponibilidad = models.BooleanField(default=True)
+
+    def __str__(self):
+        return self.nombre
+
+
+class Reserva(models.Model):
+    sala = models.ForeignKey(Sala, related_name='reservas', on_delete=models.CASCADE)
+    fecha = models.DateField()
+    hora_inicio = models.TimeField()
+    hora_fin = models.TimeField()
+
+    class Meta:
+        unique_together = ('sala', 'fecha', 'hora_inicio', 'hora_fin')
+
+    def __str__(self):
+        return f"Reserva de {self.sala.nombre} el {self.fecha} de {self.hora_inicio} a {self.hora_fin}"
